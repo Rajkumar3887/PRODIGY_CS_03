@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sentinel AI | Security Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030712;
+            --panel: rgba(17, 24, 39, 0.75);
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.4);
+            --cyan: #06b6d4;
+            --green: #10b981;
+            --red: #f43f5e;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+        body {
+            margin: 0; min-height: 100vh; background: var(--bg); color: #f1f5f9;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            background-image: radial-gradient(circle at 50% 50%, #1e1b4b 0%, transparent 80%);
+        }
+
+        .layout { max-width: 1200px; width: 100%; display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+
+        .card {
+            background: var(--panel); backdrop-filter: blur(40px); border-radius: 28px;
+            border: 1px solid var(--border); padding: 40px; position: relative;
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.6);
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 35px; }
+        .title h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1.5px; }
+        .title p { margin: 6px 0 0; color: #94a3b8; font-size: 14px; }
+
+        .gauge-box { position: relative; width: 130px; height: 130px; }
+        .gauge-svg { transform: rotate(-90deg); filter: drop-shadow(0 0 8px var(--accent-glow)); }
+        .gauge-bg { fill: none; stroke: rgba(255,255,255,0.03); stroke-width: 10; }
+        .gauge-fill { 
+            fill: none; stroke: var(--accent); stroke-width: 10; 
+            stroke-dasharray: 314; stroke-dashoffset: 314;
+            transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+            stroke-linecap: round;
+        }
+        .gauge-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-weight: 800; font-size: 22px; }
+
+        .input-wrap { position: relative; margin-top: 35px; }
+        input {
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+            padding: 22px 140px 22px 28px; border-radius: 18px; color: #fff; font-size: 20px;
+            transition: 0.3s; font-family: 'JetBrains Mono', monospace;
+        }
+        input:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.6); }
+
+        .input-actions { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); display: flex; gap: 8px; }
+        .small-btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+            color: #94a3b8; padding: 8px 12px; border-radius: 10px; cursor: pointer;
+            font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+            transition: 0.2s;
+        }
+        .small-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: #fff; }
+
+        .matrix { display: flex; gap: 8px; margin-top: 15px; }
+        .chip { 
+            padding: 8px 14px; border-radius: 10px; font-size: 11px; font-weight: 800;
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border); color: #475569;
+            transition: all 0.4s;
+        }
+        .chip.active { background: var(--accent-glow); border-color: var(--accent); color: #fff; box-shadow: 0 0 10px var(--accent-glow); }
+
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 40px; }
+        .stat-item { background: rgba(0,0,0,0.25); padding: 22px; border-radius: 18px; border: 1px solid var(--border); transition: 0.3s; }
+        .stat-item:hover { border-color: var(--accent); background: rgba(139, 92, 246, 0.05); }
+        .stat-label { font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 8px; }
+        .stat-val { font-size: 16px; font-weight: 800; font-family: 'JetBrains Mono'; color: #f1f5f9; }
+
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--accent), #6d28d9); color: #fff; 
+            border: none; padding: 16px 32px; border-radius: 14px; font-weight: 700; cursor: pointer;
+            width: 100%; margin-top: 25px; transition: 0.3s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 24px var(--accent-glow); }
+
+        .sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .log-list { overflow-y: auto; margin-top: 15px; max-height: 500px; }
+        .log-row { padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 12px; }
+
+        @media (max-width: 950px) { .layout { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div class="card">
+        <div class="header">
+            <div class="title">
+                <h1>NextGen Password Sentinel</h1>
+                <p>Enterprise Cryptanalysis Platform</p>
+            </div>
+            <div class="gauge-box">
+                <svg class="gauge-svg" viewBox="0 0 110 110">
+                    <circle class="gauge-bg" cx="55" cy="55" r="50"></circle>
+                    <circle id="gaugeFill" class="gauge-fill" cx="55" cy="55" r="50"></circle>
+                </svg>
+                <div id="scoreLabel" class="gauge-text">0%</div>
+            </div>
+        </div>
+
+        <div class="input-wrap">
+            <input type="password" id="pw" placeholder="Intercept string for audit..." autocomplete="off">
+            <div class="input-actions">
+                <button id="toggleVisible" class="small-btn">Show</button>
+                <button id="copyBtn" class="small-btn">Copy</button>
+            </div>
+            <div class="matrix">
+                <div id="m-lower" class="chip">LOWERCASE</div>
+                <div id="m-upper" class="chip">UPPERCASE</div>
+                <div id="m-num" class="chip">NUMERIC</div>
+                <div id="m-spec" class="chip">SYMBOLS</div>
+                <div id="m-len" class="chip">MIN LENGTH</div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-label">Entropy Depth</div>
+                <div id="s-ent" class="stat-val">0.00 bits</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Search Space</div>
+                <div id="s-space" class="stat-val">10^0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Crack Resistance</div>
+                <div id="s-time" class="stat-val">Instant</div>
+            </div>
+        </div>
+
+        <button onclick="gen()" class="btn-primary">Generate Passphrase</button>
+        
+        <div id="tips" style="margin-top:25px; font-size:13px; color:#94a3b8;">
+            Audit system idle. Please provide an input string.
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="card" style="padding:25px;">
+            <div style="font-weight:800; font-size:12px; color:var(--cyan); letter-spacing:1px; margin-bottom:15px; display: flex; justify-content: space-between;">
+                AUDIT LOG
+                <button onclick="clearLogs()" style="background:none; border:none; color:var(--red); font-size:10px; cursor:pointer;">CLEAR</button>
+            </div>
+            <div id="logList" class="log-list">
+                <div style="color:#475569; font-size:11px;">No sessions recorded.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const pw = document.getElementById('pw');
+    const fill = document.getElementById('gaugeFill');
+    const logList = document.getElementById('logList');
+    const toggleBtn = document.getElementById('toggleVisible');
+    const copyBtn = document.getElementById('copyBtn');
+
+    async function analyze() {
+        const val = pw.value;
+        if(!val) { resetUI(); return; }
+
+        try {
+            // Talk to server.py endpoint
+            const response = await fetch('http://127.0.0.1:8000/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: val, leaked: false })
+            });
+            
+            const data = await response.json();
+
+            const score = data.score;
+            fill.style.strokeDashoffset = 314 - (314 * score) / 100;
+            fill.style.stroke = score > 80 ? 'var(--green)' : score > 50 ? 'var(--cyan)' : 'var(--red)';
+            document.getElementById('scoreLabel').innerText = score + '%';
+            
+            // Visual Matrix Highlights
+            document.getElementById('m-lower').classList.toggle('active', /[a-z]/.test(val));
+            document.getElementById('m-upper').classList.toggle('active', /[A-Z]/.test(val));
+            document.getElementById('m-num').classList.toggle('active', /[0-9]/.test(val));
+            document.getElementById('m-spec').classList.toggle('active', /[^A-Za-z0-9]/.test(val));
+            document.getElementById('m-len').classList.toggle('active', val.length >= 12);
+
+            // Populate Stats from Backend
+            document.getElementById('s-ent').innerText = data.entropy_bits.toFixed(2) + ' bits';
+            document.getElementById('s-space').innerText = data.guesses_estimate.toExponential(1); 
+            document.getElementById('s-time').innerText = data.ttc;
+
+            const tips = document.getElementById('tips');
+            tips.innerHTML = data.reasons.length > 0 ? '⚠️ ' + data.reasons.join(' | ') : '✓ Secure Password Pattern';
+            tips.style.color = score > 70 ? 'var(--green)' : '#94a3b8';
+
+        } catch (error) {
+            console.error("Backend unreachable. Ensure server.py is running.");
+        }
+    }
+
+    async function gen() {
+        try {
+            // Call server.py generate endpoint
+            const response = await fetch('http://127.0.0.1:8000/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ words: 3, capitalize: true, add_symbol: true })
+            });
+            const data = await response.json();
+            pw.value = data.password;
+            analyze();
+            addToLog(data.password, "SECURE");
+        } catch (e) {
+            console.error("Generation failed.");
+        }
+    }
+
+    function addToLog(val, status) {
+        if(logList.innerText.includes('No sessions')) logList.innerHTML = '';
+        const row = document.createElement('div');
+        row.className = 'log-row';
+        row.innerHTML = `<span>${val.substring(0,8)}...</span> <span style="color:var(--cyan)">${status}</span>`;
+        logList.prepend(row);
+    }
+
+    toggleBtn.onclick = () => {
+        const isMasked = pw.type === 'password';
+        pw.type = isMasked ? 'text' : 'password';
+        toggleBtn.innerText = isMasked ? 'Hide' : 'Show';
+    };
+
+    copyBtn.onclick = () => {
+        if(!pw.value) return;
+        navigator.clipboard.writeText(pw.value);
+        copyBtn.innerText = 'Copied';
+        setTimeout(() => copyBtn.innerText = 'Copy', 1500);
+    };
+
+    function clearLogs() { logList.innerHTML = '<div style="color:#475569; font-size:11px;">No sessions recorded.</div>'; }
+
+    function resetUI() {
+        fill.style.strokeDashoffset = 314;
+        document.getElementById('scoreLabel').innerText = '0%';
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        document.getElementById('s-ent').innerText = '0.00 bits';
+        document.getElementById('s-space').innerText = '10^0';
+        document.getElementById('s-time').innerText = 'Instant';
+    }
+
+    pw.oninput = analyze;
+</script>
+
+</body>
+</html>
